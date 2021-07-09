@@ -79,6 +79,11 @@ a `before-save-hook'."
           (const :tag "None" nil))
   :group 'prettier-js)
 
+(defcustom prettier-js-default-directory nil
+  "Function to set `default-directory' while calling Prettier."
+  :type 'function
+  :group 'prettier-js)
+
 (defun prettier-js--goto-line (line)
   "Move cursor to line LINE."
   (goto-char (point-min))
@@ -163,7 +168,12 @@ a `before-save-hook'."
     '())))
 
 (defun prettier-js--call-prettier (bufferfile outputfile errorfile)
-  (let ((width-args (prettier-js--width-args)))
+  (let ((width-args (prettier-js--width-args))
+        (default-directory (or (and (if (symbolp prettier-js-default-directory)
+                                        (fboundp prettier-js-default-directory)
+                                      (functionp prettier-js-default-directory))
+                                    (funcall prettier-js-default-directory))
+                               default-directory)))
     (apply 'call-process
            prettier-js-command bufferfile (list (list :file outputfile) errorfile)
            nil (append prettier-js-args width-args (list "--stdin-filepath" buffer-file-name)))))
